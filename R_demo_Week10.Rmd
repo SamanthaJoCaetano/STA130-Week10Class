@@ -1,0 +1,90 @@
+---
+title: "STA130: Week 10 R Demo"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+
+# Palmer Penguins
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+```
+
+Goal: We want to try to predict the species of a penguin, based on the information we know about them
+
+```{r}
+library(rpart)
+library(partykit)
+
+# First, we'll restrict attention to observations that don't have any missing values
+summary(penguins) ## New function to give a quick overview of each of the variables in a tibble
+
+# Now, we'll divide our data into training/testing datasets
+# Set up
+set.seed(17); 
+
+
+# Create training and testing datasets
+
+# How many observations are there in each of the training and testing datasets?
+```
+
+
+
+```{r}
+# Let's build a tree using only geographic information to predict penguin species
+
+# What is the difference between type="simple" and type="extended" for visualizing a classification tree?
+
+# How can we visualize what is going on behind the scenes?
+
+
+# Let's build a second tree using only physiological information to predict penguins species
+
+# Were all of the candidate predictors used to make splits in tree2?
+
+
+# Now let's build a third tree which allows for all variables (apart from species) to be used to predict penguin species
+
+# What's weird/wrong with the tree above?
+
+
+# Let's try that again
+
+```
+
+
+
+# Now let's compare our three trees!
+```{r}
+# Make predictions for test observations based on tree1
+
+# What is the accuracy for tree1 based on testing data?
+
+# Can we calculate the sensitivity/specificity for this tree?
+
+# Which type of penguins are hardest to classify based on this tree?
+
+
+# Make predictions for test observations based on tree2
+
+
+# What is the accuracy for tree1 based on testing data?
+
+
+
+# Make predictions for test observations based on tree3
+
+# What is the accuracy for tree1 based on testing data?
+
+# What do you notice about the confusion matrices for trees 2 and 3?
+
+
+# Which tree would you prefer to use: tree1 or tree2/3?
+
+```
+
