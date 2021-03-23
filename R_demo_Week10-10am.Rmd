@@ -1,0 +1,138 @@
+---
+title: "STA130: Week 10 R Demo"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+
+
+# Palmer Penguins
+
+```{r}
+library(tidyverse)
+library(palmerpenguins)
+```
+
+Goal: We want to try to predict the species of a penguin, based on the information we know about them
+
+```{r}
+library(rpart)
+library(partykit)
+
+# First, we'll restrict attention to observations that don't have any missing values
+summary(penguins) ## New function to give a quick overview of each of the variables in a tibble
+penguins_clean <- penguins %>% 
+  filter(!is.na(bill_length_mm) & !is.na(bill_depth_mm) & !is.na(flipper_length_mm) & !is.na(body_mass_g))
+summary(penguins_clean)
+
+
+# Now, we'll divide our data into training/testing datasets
+# Set up
+set.seed(17); 
+n <- nrow(penguins_clean)
+training_indices <- sample(1:n, size=round(0.8*n))
+
+penguins_clean <- penguins_clean %>% rowid_to_column() # adds a new ID column
+
+# Create training and testing datasets
+train <- penguins_clean %>% filter(rowid %in% training_indices)
+test <- penguins_clean %>% filter(!rowid %in% training_indices)
+
+# How many observations are there in each of the training and testing datasets?
+nrow(train)
+nrow(test)
+
+```
+
+
+
+```{r}
+# Let's build a tree using only geographic information to predict penguin species
+tree1 <- rpart(species ~ island, data=train)
+plot(as.party(tree1), type = "simple")
+plot(as.party(tree1), type = "extended")
+
+# What is the difference between type="simple" and type="extended" for visualizing a classification tree?
+# Both representing the same tree, just showing different info
+
+# How can we visualize what is going on behind the scenes?
+train %>% ggplot(aes(x = island)) +
+  geom_bar() +
+  facet_wrap(~species)
+  
+
+# Let's build a second tree using only physiological information to predict penguins species
+tree2 <- rpart(species ~ bill_length_mm + bill_depth_mm + flipper_length_mm + body_mass_g, data = train)
+plot(as.party(tree2), type = "simple")
+plot(as.party(tree2), type = "extended")
+
+# Were all of the candidate predictors used to make splits in tree2?
+# No! Body_mass_g is not used to make a split
+
+# Now let's build a third tree which allows for all variables (apart from species) to be used to predict penguin species
+tree3 <- rpart(species ~ ., data = train)
+plot(as.party(tree3), type = "simple")
+
+
+# What's weird/wrong with the tree above?
+# Rowid is an arbitrary label, which we shouldn't use to make predictions!
+
+# Let's try that again
+tree3 <- rpart(species ~ ., data = train %>% select(-rowid))
+plot(as.party(tree3), type = "simple")
+```
+
+
+
+# Now let's compare our three trees!
+```{r}
+# Make predictions for test observations based on tree1
+test_preds_1 <- predict(tree1, newdata=test, type="class")
+head(test_preds_1)
+
+m1.test <- table(test_preds_1, test$species)
+m1.test
+
+# What is the accuracy for tree1 based on testing data?
+sum(diag(m1.test)) / sum(m1.test)
+
+
+# Can we calculate the sensitivity/specificity for this tree?
+# No!
+
+# Which type of penguins are hardest to classify based on this tree?
+# - Almost 2/3 of Adelie penguins in the testing data are misclassified
+# - All of the Chinstrap and Gentoo penguins in the testing data are correctly classified!
+
+
+# Make predictions for test observations based on tree2
+test_preds_2 <- predict(tree2, newdata=test, type="class")
+head(test_preds_2)
+
+m2.test <- table(test_preds_2, test$species)
+m2.test
+
+# What is the accuracy for tree1 based on testing data?
+sum(diag(m2.test)) / sum(m2.test)
+
+
+# Make predictions for test observations based on tree3
+test_preds_3 <- predict(tree3, newdata=test, type="class")
+head(test_preds_3)
+
+m3.test <- table(test_preds_3, test$species)
+m3.test
+
+# What is the accuracy for tree1 based on testing data?
+sum(diag(m3.test)) / sum(m3.test)
+
+
+# What do you notice about the confusion matrices for trees 2 and 3?
+# They are the same!
+# If we look at the trees more closely, we see that although one of the splits involves a different variable (island vs bill depth), the split is actually the same (compare the n and err values). 
+
+# Which tree would you prefer to use: tree1 or tree2/3?
+# In this case, both trees have very similar complexity (similar number of splits/terminal nodes), but since the accuracy of tree 2/3 on the testing data is so much better, we would prefer to use tree2 (or 3).  
+```
+
